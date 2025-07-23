@@ -4,7 +4,7 @@ from PIL import Image, ImageOps
 
 class PadImageForOutpaintingSimplified:
     """
-    简化版的图片外扩节点，带最大像素限制功能
+    简化版的图片外扩节点，带最大像素限制功能，支持遮罩同步处理
     """
     
     @classmethod
@@ -14,14 +14,18 @@ class PadImageForOutpaintingSimplified:
                 "image": ("IMAGE",),
                 "feather": ("INT", {"default": 40, "min": 0, "max": 0xffffffff, "step": 1}),
                 "max_pixels": ("INT", {"default": 768432, "min": 64, "max": 0xffffffff, "step": 1}),
+            },
+            "optional": {
+                "mask_opt": ("MASK",),  # 新增可选遮罩输入
             }
         }
     
-    RETURN_TYPES = ("IMAGE", "MASK")
+    RETURN_TYPES = ("IMAGE", "MASK", "MASK")
+    RETURN_NAMES = ("image", "outpaint_mask", "processed_mask")
     FUNCTION = "expand_image"
     CATEGORY = "image"
     
-    def expand_image(self, image, feather, max_pixels):
+    def expand_image(self, image, feather, max_pixels, mask_opt=None):
         # 第一步：获取原始图像尺寸
         batch_size, orig_h, orig_w, channels = image.shape
         orig_w, orig_h = int(orig_w), int(orig_h)
@@ -57,6 +61,25 @@ class PadImageForOutpaintingSimplified:
             )
             image = scaled_image.permute(0, 2, 3, 1)  # 恢复为 [B, H, W, C]
             
+            # 如果有输入遮罩，同样缩放遮罩
+            if mask_opt is not None:
+                # 处理遮罩维度 (可能为2D或3D)
+                if mask_opt.dim() == 2:
+                    mask_opt = mask_opt.unsqueeze(0).unsqueeze(0)  # [1, 1, H, W]
+                elif mask_opt.dim() == 3:
+                    mask_opt = mask_opt.unsqueeze(1)  # [B, 1, H, W]
+                
+                scaled_mask = torch.nn.functional.interpolate(
+                    mask_opt,
+                    size=(new_h, new_w),
+                    mode='bilinear',
+                    align_corners=False
+                )
+                # 恢复原始维度
+                if scaled_mask.size(1) == 1:
+                    scaled_mask = scaled_mask.squeeze(1)  # [B, H, W]
+                mask_opt = scaled_mask
+            
             # 更新尺寸信息
             orig_w, orig_h = new_w, new_h
             W, H = new_w, new_h  # 缩放后不需要再扩展
@@ -79,6 +102,20 @@ class PadImageForOutpaintingSimplified:
         
         # 内部区域为0（原始图像区域）
         mask[:, y:y+orig_h, x:x+orig_w] = 0
+        
+        # 处理输入遮罩（如果有）
+        processed_mask = torch.zeros((batch_size, H, W))
+        if mask_opt is not None:
+            # 确保遮罩维度正确
+            if mask_opt.dim() == 2:
+                mask_opt = mask_opt.unsqueeze(0)  # [1, H, W]
+            elif mask_opt.dim() == 3:
+                # 检查批次大小是否匹配
+                if mask_opt.size(0) != batch_size:
+                    mask_opt = mask_opt[:batch_size]  # 截取匹配的批次
+            
+            # 将遮罩放置到中心
+            processed_mask[:, y:y+orig_h, x:x+orig_w] = mask_opt[:, :orig_h, :orig_w]
         
         # 应用羽化
         if feather > 0:
@@ -116,7 +153,7 @@ class PadImageForOutpaintingSimplified:
             # 应用羽化到所有批次
             mask = mask * feathered_mask.unsqueeze(0)
         
-        return (new_image, mask)
+        return (new_image, mask, processed_mask)
 
 # 注册节点
 NODE_CLASS_MAPPINGS = {
