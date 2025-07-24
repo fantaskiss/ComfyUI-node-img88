@@ -1,6 +1,5 @@
 import torch
 import math
-from PIL import Image, ImageOps
 
 class PadImageForOutpaintingSimplified:
     """
@@ -20,8 +19,10 @@ class PadImageForOutpaintingSimplified:
             }
         }
     
-    RETURN_TYPES = ("IMAGE", "MASK", "MASK")
-    RETURN_NAMES = ("image", "outpaint_mask", "processed_mask")
+    # 修改 RETURN_TYPES，添加 INT 类型用于输出 x 和 y 坐标
+    RETURN_TYPES = ("IMAGE", "MASK", "MASK", "INT", "INT")
+    # 修改 RETURN_NAMES，添加对应的名称
+    RETURN_NAMES = ("image", "outpaint_mask", "processed_mask", "x", "y")
     FUNCTION = "expand_image"
     CATEGORY = "image"
     
@@ -38,8 +39,13 @@ class PadImageForOutpaintingSimplified:
         W = round_to_64(orig_w)
         H = round_to_64(orig_h)
         
+        # 初始化缩放标志和坐标
+        was_resized = False
+        x, y = 0, 0 # 初始化 x, y 坐标
+        
         # 第二步：检查像素数是否超过限制
         if W * H > max_pixels:
+            was_resized = True
             # 计算缩放比例
             scale_factor = math.sqrt(max_pixels / (W * H))
             
@@ -85,26 +91,25 @@ class PadImageForOutpaintingSimplified:
             W, H = new_w, new_h  # 缩放后不需要再扩展
         
         # 第三步：计算填充量（仅当未缩放时）
-        if W > orig_w or H > orig_h:
+        if not was_resized and (W > orig_w or H > orig_h):
             x = (W - orig_w) // 2
             y = (H - orig_h) // 2
-        else:
-            x, y = 0, 0
+        # 如果缩放了，则 x, y 保持为 0，因为图像直接适应目标尺寸
         
         # 第四步：创建新图像
-        new_image = torch.zeros((batch_size, H, W, channels))
+        new_image = torch.zeros((batch_size, H, W, channels), dtype=image.dtype, device=image.device)
         
-        # 第五步：将原始图像放置到新图像中心
+        # 第五步：将原始图像（或缩放后的图像）放置到新图像指定位置
         new_image[:, y:y+orig_h, x:x+orig_w, :] = image
         
         # 第六步：创建遮罩
-        mask = torch.ones((batch_size, H, W))
+        mask = torch.ones((batch_size, H, W), dtype=torch.float32, device=image.device)
         
         # 内部区域为0（原始图像区域）
         mask[:, y:y+orig_h, x:x+orig_w] = 0
         
         # 处理输入遮罩（如果有）
-        processed_mask = torch.zeros((batch_size, H, W))
+        processed_mask = torch.zeros((batch_size, H, W), dtype=torch.float32, device=image.device)
         if mask_opt is not None:
             # 确保遮罩维度正确
             if mask_opt.dim() == 2:
@@ -112,48 +117,57 @@ class PadImageForOutpaintingSimplified:
             elif mask_opt.dim() == 3:
                 # 检查批次大小是否匹配
                 if mask_opt.size(0) != batch_size:
-                    mask_opt = mask_opt[:batch_size]  # 截取匹配的批次
+                    # 如果批次不匹配，取前 batch_size 个或复制第一个（取决于具体情况，这里假设输入批次是1或匹配的）
+                    if mask_opt.size(0) == 1:
+                         mask_opt = mask_opt.repeat(batch_size, 1, 1)
+                    else:
+                         mask_opt = mask_opt[:batch_size] # 截取匹配的批次
             
-            # 将遮罩放置到中心
+            # 将遮罩放置到指定位置
             processed_mask[:, y:y+orig_h, x:x+orig_w] = mask_opt[:, :orig_h, :orig_w]
         
         # 应用羽化
         if feather > 0:
             # 创建羽化遮罩
-            feathered_mask = torch.ones((H, W))
+            feathered_mask = torch.ones((H, W), dtype=torch.float32, device=image.device)
             
             # 顶部羽化
             if y > 0:
-                top_feather = torch.linspace(1, 0, feather).view(feather, 1)
-                top_feather = top_feather.repeat(1, W)
-                feathered_mask[:y, :] = 1
-                feathered_mask[max(0, y-feather):y, :] = top_feather[max(0, feather-y):, :]
+                top_feather_len = min(feather, y)
+                if top_feather_len > 0:
+                    top_feather = torch.linspace(1, 0, top_feather_len, device=feathered_mask.device).view(top_feather_len, 1)
+                    top_feather = top_feather.repeat(1, W)
+                    feathered_mask[y-top_feather_len:y, :] = top_feather
             
             # 底部羽化
             if y + orig_h < H:
-                bottom_feather = torch.linspace(0, 1, feather).view(feather, 1)
-                bottom_feather = bottom_feather.repeat(1, W)
-                feathered_mask[y+orig_h:, :] = 1
-                feathered_mask[y+orig_h:min(H, y+orig_h+feather), :] = bottom_feather[:min(feather, H - (y+orig_h)), :]
+                bottom_feather_len = min(feather, H - (y + orig_h))
+                if bottom_feather_len > 0:
+                    bottom_feather = torch.linspace(0, 1, bottom_feather_len, device=feathered_mask.device).view(bottom_feather_len, 1)
+                    bottom_feather = bottom_feather.repeat(1, W)
+                    feathered_mask[y+orig_h:y+orig_h+bottom_feather_len, :] = bottom_feather
             
             # 左侧羽化
             if x > 0:
-                left_feather = torch.linspace(1, 0, feather).view(1, feather)
-                left_feather = left_feather.repeat(H, 1)
-                feathered_mask[:, :x] = 1
-                feathered_mask[:, max(0, x-feather):x] = left_feather[:, max(0, feather-x):]
+                left_feather_len = min(feather, x)
+                if left_feather_len > 0:
+                    left_feather = torch.linspace(1, 0, left_feather_len, device=feathered_mask.device).view(1, left_feather_len)
+                    left_feather = left_feather.repeat(H, 1)
+                    feathered_mask[:, x-left_feather_len:x] = left_feather
             
             # 右侧羽化
             if x + orig_w < W:
-                right_feather = torch.linspace(0, 1, feather).view(1, feather)
-                right_feather = right_feather.repeat(H, 1)
-                feathered_mask[:, x+orig_w:] = 1
-                feathered_mask[:, x+orig_w:min(W, x+orig_w+feather)] = right_feather[:, :min(feather, W - (x+orig_w))]
+                 right_feather_len = min(feather, W - (x + orig_w))
+                 if right_feather_len > 0:
+                    right_feather = torch.linspace(0, 1, right_feather_len, device=feathered_mask.device).view(1, right_feather_len)
+                    right_feather = right_feather.repeat(H, 1)
+                    feathered_mask[:, x+orig_w:x+orig_w+right_feather_len] = right_feather
             
             # 应用羽化到所有批次
-            mask = mask * feathered_mask.unsqueeze(0)
+            mask = mask * feathered_mask.unsqueeze(0) # [1, H, W] * [1, H, W] -> [1, H, W], 然后广播到 [B, H, W]
         
-        return (new_image, mask, processed_mask)
+        # 返回新图像、遮罩、处理后的遮罩以及原始图像在新图像中的坐标 x, y
+        return (new_image, mask, processed_mask, x, y)
 
 # 注册节点
 NODE_CLASS_MAPPINGS = {
