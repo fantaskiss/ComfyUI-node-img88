@@ -11,3 +11,7 @@
 该流程说明：使用的是kontext的inpaint节点，本PadImageForOutpaintingSimplified.py节点对原图片进行边长放大处理后，生成对应空白部分的黑边，同时作为遮罩传出。
 同时传出的还有扩图后的移动坐标，用来将原图贴回来。这样贴回来的图片就是用kontext重写边缘但中心是原图的图片
 可以在流程中保留kontext扩大后的图，也可以保存重写边缘后的图。请自行更改节点。
+
+
+提供一个新的节点:img8x.py 具有PadImageForOutpaintingSimplified.py的所有功能，所不同的是，可以对边长的倍数人为设置。
+<img width="1608" height="826" alt="image" src="https://github.com/user-attachments/assets/1d0b697a-1690-46ad-ba2b-8239c00f3ad7" />
