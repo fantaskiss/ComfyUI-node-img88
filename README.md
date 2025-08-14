@@ -15,3 +15,5 @@
 
 提供一个新的节点:img8x.py 具有PadImageForOutpaintingSimplified.py的所有功能，所不同的是，可以对边长的倍数人为设置。
 <img width="1608" height="826" alt="image" src="https://github.com/user-attachments/assets/1d0b697a-1690-46ad-ba2b-8239c00f3ad7" />
+
+提供一个新节点：imgx8e.py。将flux，wan，qwen-image这三种模型的图片大小的官方预设值集成。方便文生图或者扩图时使用。
