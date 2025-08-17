@@ -8,7 +8,7 @@
 节点img8x.py：对输入图片的边长按照用户设置的乘数进行处理。处理后可以生成遮罩，方便后续处理。
 <img width="1608" height="826" alt="image" src="https://github.com/user-attachments/assets/1d0b697a-1690-46ad-ba2b-8239c00f3ad7" />
 
-上传一个流程padimagewithimg8x.py，用kontext来处理分辨率比较小的图片。基于扩图流程做的，可以迅速对图片做预处理。
+上传一个流程padimagewithimg8x.json，用kontext来处理分辨率比较小的图片。基于扩图流程做的，可以迅速对图片做预处理。
 如有需求请自行下载。
 该流程说明：使用的是kontext的inpaint方法，使用img8x.py节点对原图片进行边长放大处理后，生成对应空白部分的黑边，同时作为遮罩传出。
 流程中红色节点为本img8x.py节点。
