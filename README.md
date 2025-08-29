@@ -25,12 +25,12 @@ Node img8x.py: Processes the edge length of the input image according to the use
 
 
 
-上传一个流程padimagewithimg8x.json，用kontext来处理图片边长。基于kontext扩图流程，可以迅速对图片做预处理。
+上传一个流程padimagewithimg8x.json，用Flux fill来处理图片边长。基于fill扩图流程，可以迅速对图片做预处理。
 如有需求请自行下载。
-该流程说明：使用的是kontext的inpaint方法，使用img8x.py节点对原图片进行边长放大处理后，生成对应空白部分的黑边，同时作为遮罩传出。
+该流程说明：使用的是flux fill的inpaint方法，使用img8x.py节点对原图片进行边长放大处理后，生成对应空白部分的黑边，同时作为遮罩传出。
 流程中红色节点为本img8x.py节点。
-同时传出的还有扩图后的移动坐标，用来将原图贴回来。这样贴回来的图片就是用kontext重写边缘但中心是原图的图片
-可以在流程中保留kontext扩大后的图，也可以保存重写边缘后的图。请自行更改节点。
+同时传出的还有扩图后的移动坐标，用来将原图贴回来。这样贴回来的图片就是用fill重写边缘但中心是原图的图片
+可以在流程中保留fill扩大后的图，也可以保存重写边缘后的图。请自行更改节点。
 
 提供一个新节点：imgx8e.py。将flux，wan，qwen-image这三种模型的图片大小的官方预设值集成。方便文生图或者扩图时使用。
 
