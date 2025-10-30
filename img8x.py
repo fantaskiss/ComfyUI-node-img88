@@ -88,7 +88,10 @@ class img8x:
             x = (W - orig_w) // 2
             y = (H - orig_h) // 2
             
-        # 如果缩放了，则 x, y 保持为 0，因为图像直接适应目标尺寸
+        # 如果缩放了，则 x, y 保持为 0，因为图像直接适应目标尺寸 (实际上，这里 x, y 会被重新计算为 (W - new_w)//2, (H - new_h)//2)
+        # 重新计算 x, y 以适应最终的 H, W 和当前的 orig_h, orig_w (这实际上是缩放后或原始对齐后的尺寸)
+        x = (W - orig_w) // 2
+        y = (H - orig_h) // 2
         
         # 第四步：创建新图像
         new_image = torch.zeros((batch_size, H, W, channels), dtype=image.dtype, device=image.device)
@@ -115,8 +118,13 @@ class img8x:
                          mask_opt = mask_opt.repeat(batch_size, 1, 1)
                     else:
                          mask_opt = mask_opt[:batch_size] # 截取匹配的批次
-            # 将遮罩放置到指定位置
-            processed_mask[:, y:y+orig_h, x:x+orig_w] = mask_opt[:, :orig_h, :orig_w]
+            # --- 修改开始 ---
+            # 获取当前 mask_opt 的实际高度和宽度（可能已缩放）
+            mask_h, mask_w = mask_opt.shape[-2], mask_opt.shape[-1]
+            # 将 mask_opt 放置到 processed_mask 的对应位置 [y, y+mask_h, x, x+mask_w]
+            # 这里的 y, x 是根据最终尺寸 H, W 和当前 mask_opt 的尺寸计算得出的偏移
+            processed_mask[:, y:y+mask_h, x:x+mask_w] = mask_opt[:, :mask_h, :mask_w] # 使用 mask_h, mask_w 索引
+            # --- 修改结束 ---
             
         # 应用羽化
         if feather > 0:
