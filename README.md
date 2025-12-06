@@ -47,11 +47,13 @@ imgx8e.py. Integrates the official preset values for image sizes for the flux, w
 <img width="1828" height="707" alt="image" src="https://github.com/user-attachments/assets/98190874-eeec-4456-b003-3d497f8b23b9" />
 
 ==========================================================================
+
 三个新节点方便qwen vqa用户反推与批量反推。具体用法请见配套流，如果需要批量处理，请安装ComfyUI-lumi-batcher并遵照该节点方法设置批处理。
 img8_adv_image_loader.py按照文件夹载入图片，并输出qwen vqa接受的path数据路径。
 img8txtsaver.py将反推内容保存进与图片相同的文件夹，或自行设定文件夹。
 img8path2string.py将qwenvqa的path格式转换为正常的字符串path格式，同时可选输出文件名，方便使用。
 
-具体用法参见配套流：打标未完成.jason。其中红色节点为介绍中的节点。
+具体用法参见配套流：打标未完成.jason。其中的红色节点为介绍中的节点。
 另外：本人有 ComfyUI-Qwen3_VQA_enhanced用于替换qwen vqa原节点中的模型。具体请搜索仓库ComfyUI-Qwen3_VQA_enhanced
+
 ==========================================================================
