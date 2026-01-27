@@ -1,3 +1,6 @@
+本人仓库竟然有人git，因为一直是自娱自乐，没有做ComfyUI的自定义节点索引。现在把索引传上来。
+Someone has git my repository. Since I have always been doing it for my own enjoyment, I haven't created a custom nodes index for ComfyUI. Now I'm uploading the index.
+
 因为模型对于图像的两边长有被除数要求，为避免一般缩放产生形变而制作。
 
 Because the model has a divisor requirement for the length of both sides of the image, it is made to avoid deformation caused by general scaling.
