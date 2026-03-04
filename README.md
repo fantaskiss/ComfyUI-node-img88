@@ -79,3 +79,8 @@ Node: img8seedvr2WHtrans.py is used to calculate the edge length before scaling 
 
 <img width="1217" height="576" alt="image" src="https://github.com/user-attachments/assets/a48fe433-12bc-4135-8be8-f6eb3f669d32" />
 
+=====================================================================================
+
+节点：nodes.py：（截止2023年3月4日声明）用于https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm的qwen3.5支持。按原节点的说明安装好原节点后，将此文件覆盖原节点的nodes.py。如果原作者看到，并认为侵权，请联系我，我会删除掉。另外，模型名字有误但懒得改了，请凑合着用~！
+
+nodes.py：(Statement as of March 4, 2023) Support for qwen3.5 for https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm. After installing the original node according to the original node's instructions, replace the original node's nodes.py with this file. If the original author sees this and considers it infringing, please contact me, and I will remove it. Additionally, there is an error in the model name, but I'm too lazy to fix it, so please use it as it is ~!
