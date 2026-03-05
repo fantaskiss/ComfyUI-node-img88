@@ -163,7 +163,7 @@ class LLAMA_CPP_STORAGE:
             print(f"[llama-cpp_vlm] Loading clip: {mmproj}")
             # 🔹 修改：添加 Qwen3.5-VL 到判断条件
             if chat_handler in ["Qwen3-VL", "Qwen3-VL-Thinking", "Qwen3.5-VL", "Qwen3.5-VL-Thinking"]:
-                # 🔹 修改：Qwen3.5 使用 in 判断 thinking 模式
+                # 🔹 修改：Qwen3.5 使用 in 判断 thinking 模式。
                 think_mode = chat_handler in ["Qwen3-VL-Thinking", "Qwen3.5-VL-Thinking"]
                 try:
                     cls.chat_handler = handler(
