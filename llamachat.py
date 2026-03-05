@@ -52,7 +52,7 @@ def import_llama_storage():
     except Exception as e:
         print(f"[llama-cpp-chat] Sys.path import failed: {e}")
     
-    # 方法2：使用importlib，不依赖包名，直接加载文件
+    # 方法2：使用importlib，不依赖包名，直接加载文件 无效。
     try:
         import importlib.util
         import types
@@ -352,3 +352,4 @@ if __name__ == "__main__":
             llm_extensions
         )
     print("llama-cpp-chat node definitions loaded")
+
